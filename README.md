@@ -7,7 +7,7 @@ fast.
 
 Constructor:
 
-bdev = FlashBdev(spi, cs [addr4b])
+bdev = FlashBdev(spi, cs [, addr4b])
 
 spi has to b a SPI object, cs must be a Pin object of the cs pin. If
 addr4b is True, a 4 byte addressing mode is used for the flash, otherwise
@@ -15,7 +15,8 @@ addr4b is True, a 4 byte addressing mode is used for the flash, otherwise
 16 MByte.
 
 The driver was tested with LittleFS Version 1 and 2, and also with a FAT
-file system. The latter is NOT recommended.
+file system. The latter is NOT recommended. When using the driver with
+SoftSPI, select LFS1 as file system. That is less space efficient, but faster.
 
 Examples:
 
@@ -44,24 +45,21 @@ os.chdir("/flash")
 ```
 # Example using SoftSPI with a QSPI chip.
 import os
-from flashbdev import FlashBdev
 from machine import SoftSPI, Pin
-
-wp=Pin("FLASH_WP", Pin.OUT, value=1)
-hold=Pin("FLASH_HOLD", Pin.OUT, value=1)
-cs = Pin("FLASH_CS", Pin.OUT, value=1)
-spi=SoftSPI(sck=Pin("FLASH_SCK"), mosi=Pin("FLASH_MOSI"), miso=Pin("FLASH_MISO"), baudrate=2_000_000)
-
+from flashbdev import FlashBdev
+wp = Pin("PA10", Pin.OUT, value=1)
+hold = Pin("PA11", Pin.OUT, value=1)
+cs = Pin("PB11", Pin.OUT, value=1)
+spi = SoftSPI(sck="PB10", mosi="PA08", miso="PA09", baudrate=1_000_000)
 
 flash=FlashBdev(spi, cs)
 try:
-    vfs = os.VfsLfs2(flash)
+    vfs = os.VfsLfs1(flash, progsize=256)
 except OSError as e:
     print("Mount failed with error", e)
     print("Recreate the file system")
-    os.VfsLfs2.mkfs(flash)
-    vfs = os.VfsLfs2(flash)
+    os.VfsLfs1.mkfs(flash, progsize=256)
+    vfs = os.VfsLfs1(flash, progsize=256)
 
 os.mount(vfs, "/flash")
-os.chdir("/flash")
 ```
