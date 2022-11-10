@@ -53,7 +53,7 @@ class SPIFlash:
     def __init__(self, spi, cs, addr4b=False):
         self._spi = spi
         self._cs = cs
-        self._cs.high()
+        self._cs(1)
         self._buf = bytearray(1)
         self._addr4b = addr4b
         if addr4b:
@@ -73,43 +73,39 @@ class SPIFlash:
     def getsize(self):
         return self._size
 
-    def _write(self, val):
-        if isinstance(val, int):
-            self._buf[0] = val
-            self._spi.write(self._buf)
-        else:
-            self._spi.write(val)
+    def _write_cmd(self, val):
+        self._buf[0] = val
+        self._spi.write(self._buf)
 
-    def _addr_write(self, cmd, addr):
+    def _write_addr(self, cmd, addr):
         self._addrbuf[0] = cmd
         if self._addr4b:
             self._addrbuf[-4] = addr >> 24
         self._addrbuf[-3] = addr >> 16
         self._addrbuf[-2] = addr >> 8
         self._addrbuf[-1] = addr
-        self._cs.low()
+        self._cs(0)
         self._spi.write(self._addrbuf)
 
     def getid(self):
-        self._cs.low()
-        self._write(CMD_JEDEC_ID)  # id
+        self._cs(0)
+        self._write_cmd(CMD_JEDEC_ID)  # id
         res = self._spi.read(3)
-        self._cs.high()
+        self._cs(1)
         return res
 
     def wait(self):
-        while True:
-            self._cs.low()
-            self._write(CMD_READ_STATUS)
-            r = self._spi.read(1)[0]
-            self._cs.high()
-            if r == 0:
-                return
+        self._buf[0] = 1
+        while self._buf[0]:
+            self._cs(0)
+            self._write_cmd(CMD_READ_STATUS)
+            self._spi.readinto(self._buf)
+            self._cs(1)
 
     def read_block(self, addr, buf):
-        self._addr_write(self._cmds[_READ_INDEX], addr)
+        self._write_addr(self._cmds[_READ_INDEX], addr)
         self._spi.readinto(buf)
-        self._cs.high()
+        self._cs(1)
 
     def write_block(self, addr, buf):
         # Write in 256-byte chunks
@@ -118,25 +114,25 @@ class SPIFlash:
         mv = memoryview(buf)
         while pos < length:
             size = min(length - pos, PAGE_SIZE)
-            self._cs.low()
-            self._write(CMD_WRITE_ENABLE)
-            self._cs.high()
-            # _addr_write() sets _cs low
-            self._addr_write(self._cmds[_PROGRAM_PAGE_INDEX], addr)
-            self._write(mv[pos:pos + size])
-            self._cs.high()
+            self._cs(0)
+            self._write_cmd(CMD_WRITE_ENABLE)
+            self._cs(1)
+            # _write_addr() sets _cs low
+            self._write_addr(self._cmds[_PROGRAM_PAGE_INDEX], addr)
+            self._spi.write(mv[pos:pos + size])
+            self._cs(1)
             self.wait()
 
             addr += size
             pos += size
 
     def erase(self, addr):
-        self._cs.low()
-        self._write(CMD_WRITE_ENABLE)
-        self._cs.high()
-        # _addr_write() sets _cs low
-        self._addr_write(self._cmds[_SECTOR_ERASE_INDEX], addr)
-        self._cs.high()
+        self._cs(0)
+        self._write_cmd(CMD_WRITE_ENABLE)
+        self._cs(1)
+        # _write_addr() sets _cs low
+        self._write_addr(self._cmds[_SECTOR_ERASE_INDEX], addr)
+        self._cs(1)
         self.wait()
 
 class FlashBdev(SPIFlash):
@@ -147,10 +143,9 @@ class FlashBdev(SPIFlash):
     def readblocks(self, n, buf, offset=0):
         self.read_block(n * SECTOR_SIZE + offset, buf)
 
-    def writeblocks(self, n, buf, offset=None):
-        if offset is None:
+    def writeblocks(self, n, buf, offset=0):
+        if offset == 0:
             self.erase(n * SECTOR_SIZE)
-            offset = 0
         self.write_block(n * SECTOR_SIZE + offset, buf)
 
     def ioctl(self, op, arg):
