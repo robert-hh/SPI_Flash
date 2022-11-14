@@ -35,16 +35,12 @@
 _READ_INDEX = const(0)
 _PROGRAM_PAGE_INDEX = const(1)
 _SECTOR_ERASE_INDEX = const(2)
-_CMDS3BA = b'\x03\x02\x20'
-_CMDS4BA = b'\x13\x12\x21'
+_CMDS3BA = b'\x03\x02\x20'  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
+_CMDS4BA = b'\x13\x12\x21'  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
 
 CMD_JEDEC_ID = const(0x9F)
 CMD_READ_STATUS = const(0x05)    # Read status register
 CMD_WRITE_ENABLE = const(0x06)   # Write enable
-# The commands below are placed into the _CMDS3BA and _CMDS4BA arrays.
-# CMD_READ = const(0x03)           # Read @ low speed
-# CMD_PROGRAM_PAGE = const(0x02)   # Write page
-# CMD_ERASE_4K = const(0x20)
 CMD_READ_UID = const(0x4B)
 PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)

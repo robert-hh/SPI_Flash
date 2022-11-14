@@ -17,6 +17,7 @@ addr4b is True, a 4 byte addressing mode is used for the flash, otherwise
 The driver was tested with LittleFS Version 1 and 2, and also with a FAT
 file system. The latter is NOT recommended. When using the driver with
 SoftSPI, select LFS1 as file system. That is less space efficient, but faster.
+The Lfs `progsize` parameter must not be less than 128.
 
 Examples:
 
@@ -50,16 +51,16 @@ from flashbdev import FlashBdev
 wp = Pin("PA10", Pin.OUT, value=1)
 hold = Pin("PA11", Pin.OUT, value=1)
 cs = Pin("PB11", Pin.OUT, value=1)
-spi = SoftSPI(sck="PB10", mosi="PA08", miso="PA09", baudrate=1_000_000)
+spi = SoftSPI(sck="PB10", mosi="PA08", miso="PA09", baudrate=2_000_000)
 
 flash=FlashBdev(spi, cs)
 try:
-    vfs = os.VfsLfs1(flash, progsize=256)
+    vfs = os.VfsLfs2(flash, progsize=256)
 except OSError as e:
     print("Mount failed with error", e)
     print("Recreate the file system")
-    os.VfsLfs1.mkfs(flash, progsize=256)
-    vfs = os.VfsLfs1(flash, progsize=256)
+    os.VfsLfs2.mkfs(flash, progsize=256)
+    vfs = os.VfsLfs2(flash, progsize=256)
 
 os.mount(vfs, "/flash")
 ```
