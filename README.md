@@ -7,12 +7,15 @@ fast.
 
 Constructor:
 
-bdev = FlashBdev(spi, cs [, addr4b])
+bdev = FlashBdev(spi, cs , *, addr4b=False, pagesize=256, sectorsize=4096)
 
 spi has to b a SPI object, cs must be a Pin object of the cs pin. If
 addr4b is True, a 4 byte addressing mode is used for the flash, otherwise
 3 byte addresses are used, which are sufficient up to a flash size of
 16 MByte.
+
+The optional parameters pagesize and sectorsize allow using devices with
+non-standard values for these properties.
 
 The driver was tested with LittleFS Version 1 and 2, and also with a FAT
 file system. The latter is NOT recommended. When using the driver with

@@ -46,12 +46,13 @@ PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)
 
 class SPIFlash:
-    def __init__(self, spi, cs, addr4b=False):
+    def __init__(self, spi, cs, addr4b=False, pagesize=PAGE_SIZE):
         self._spi = spi
         self._cs = cs
         self._cs(1)
         self._buf = bytearray(1)
         self._addr4b = addr4b
+        self.pagesize = pagesize
         if addr4b:
             self._cmds = _CMDS4BA
             self._addrbuf = bytearray(5)
@@ -109,7 +110,7 @@ class SPIFlash:
         pos = 0
         mv = memoryview(buf)
         while pos < length:
-            size = min(length - pos, PAGE_SIZE)
+            size = min(length - pos, self.pagesize)
             self._cs(0)
             self._write_cmd(CMD_WRITE_ENABLE)
             self._cs(1)
@@ -133,22 +134,23 @@ class SPIFlash:
 
 class FlashBdev(SPIFlash):
 
-    def __init__(self, spi, cs, addr4b=False):
-        super().__init__(spi, cs, addr4b)
+    def __init__(self, spi, cs, addr4b=False, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE):
+        super().__init__(spi, cs, addr4b, pagesize)
+        self.sectorsize = SECTOR_SIZE
 
     def readblocks(self, n, buf, offset=0):
-        self.read_block(n * SECTOR_SIZE + offset, buf)
+        self.read_block(n * self.sectorsize + offset, buf)
 
     def writeblocks(self, n, buf, offset=0):
         if offset == 0:
-            self.erase(n * SECTOR_SIZE)
-        self.write_block(n * SECTOR_SIZE + offset, buf)
+            self.erase(n * self.sectorsize)
+        self.write_block(n * self.sectorsize + offset, buf)
 
     def ioctl(self, op, arg):
         if op == 4:  # MP_BLOCKDEV_IOCTL_BLOCK_COUNT
-            return self.getsize() // SECTOR_SIZE
+            return self.getsize() // self.sectorsize
         if op == 5:  # MP_BLOCKDEV_IOCTL_BLOCK_SIZE
-            return SECTOR_SIZE
+            return self.sectorsize
         if op == 6:  # MP_BLOCKDEV_IOCTL_BLOCK_ERASE
-            self.erase(arg * SECTOR_SIZE)
+            self.erase(arg * self.sectorsize)
             return 0
