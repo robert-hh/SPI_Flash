@@ -6,30 +6,57 @@ device for a MicroPython file system. The focus of that driver is
 small size and simplicity, not speed. Nevertheless, it works reasonably
 fast.
 
-Constructor:
+## Constructors:
 
-flash = SPIflash(spi, cs, *, addr4b=False, pagesize=256)
+### flash = SPIflash(spi, cs, *, addr4b=False, pagesize=256, sectorsize=4096)
 
 spi has to b a SPI object, cs must be a Pin object of the cs pin. If
 addr4b is True, a 4 byte addressing mode is used for the flash, otherwise
 3 byte addresses are used, which are sufficient up to a flash size of
 16 MByte. 
 
-The optional parameter pagesizeallow using devices with
-non-standard values for this property.
+The optional parameters pagesize and sectorsize allow using devices with
+non-standard values for these properties.
 
-bdev = FlashBdev(flash , *, sectorsize=4096)
+### bdev = FlashBdev(flash )
 
 flash is a SPIflash object created e.g. from spiflash.py.
-The optional parameter sectorsize allow using devices with a
-non-standard values for this property.
 
 The drivers were tested with LittleFS Version 1 and 2, and also with a FAT
 file system. The latter is NOT recommended. When using the driver with
 SoftSPI, select LFS1 as file system. That is less space efficient, but faster.
 The Lfs `progsize` parameter must not be less than 128.
 
-Examples:
+##  SPIflash Methods:
+
+### flash.flash_read(addr, buffer)
+
+Read data from addres into the buffer. The amount of data is defined by the buffer
+size.
+
+### flash.flash_write(addr, buffer)
+
+Write data from the buffer at the address. The amount of data is defined by the buffer
+size. The data is written in multiples of page sizes. If the address is not a
+multiple of the page size, the size must not cross a page boundary.
+No checks are made for these restrictions.
+
+### flash.flash_erase(addr)
+
+Erase the sector at addr.
+
+
+### flash.flash_size()
+
+Return the total size of the flash as bytes. . This information is required by a file
+system block device driver.
+
+### flash.flash_sectorsize()
+
+Return the size of a sector. This information is required by a file system block device driver.
+
+
+## Examples:
 
 ```
 # Using HARD spi
@@ -54,7 +81,7 @@ os.mount(vfs, "/flash")
 ```
 
 ```
-# Example using SoftSPI with a QSPI chip.
+# Example using SoftSPI with a QSPI device.
 import os
 from flashbdev import FlashBdev
 from spiflash import SPIflash

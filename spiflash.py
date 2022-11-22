@@ -46,13 +46,14 @@ PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)
 
 class SPIflash:
-    def __init__(self, spi, cs, addr4b=False, pagesize=PAGE_SIZE):
+    def __init__(self, spi, cs, addr4b=False, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE):
         self._spi = spi
         self._cs = cs
         self._cs(1)
         self._buf = bytearray(1)
         self._addr4b = addr4b
         self.pagesize = pagesize
+        self.sectorsize = sectorsize
         if addr4b:
             self._cmds = _CMDS4BA
             self._addrbuf = bytearray(5)
@@ -67,8 +68,11 @@ class SPIflash:
         else:
             self._size = 1 << id[2]
 
-    def getsize(self):
+    def flash_size(self):
         return self._size
+
+    def flash_sectorsize(self):
+        return self.sectorsize
 
     def _write_cmd(self, val):
         self._buf[0] = val
@@ -99,18 +103,18 @@ class SPIflash:
             self._spi.readinto(self._buf)
             self._cs(1)
 
-    def readblock(self, addr, buf):
+    def flash_read(self, addr, buf):
         self._write_addr(self._cmds[_READ_INDEX], addr)
         self._spi.readinto(buf)
         self._cs(1)
 
-    def writeblock(self, addr, buf):
+    def flash_write(self, addr, buf):
         # Write in 256-byte chunks
         length = len(buf)
         pos = 0
         mv = memoryview(buf)
         while pos < length:
-            size = min(length - pos, self.pagesize)
+            size = min(length - pos, self.pagesize - pos % self.pagesize)
             self._cs(0)
             self._write_cmd(CMD_WRITE_ENABLE)
             self._cs(1)
@@ -123,7 +127,7 @@ class SPIflash:
             addr += size
             pos += size
 
-    def erase(self, addr):
+    def flash_erase(self, addr):
         self._cs(0)
         self._write_cmd(CMD_WRITE_ENABLE)
         self._cs(1)

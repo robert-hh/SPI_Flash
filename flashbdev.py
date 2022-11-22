@@ -22,27 +22,24 @@
 # SOFTWARE.
 #
 
-SECTOR_SIZE = const(4096)
-
-
 class FlashBdev:
-    def __init__(self, flash, sectorsize=SECTOR_SIZE):
+    def __init__(self, flash):
         self.flash = flash
-        self.sectorsize = sectorsize
+        self.sectorsize = flash.flash_sectorsize()
 
     def readblocks(self, n, buf, offset=0):
-        self.flash.readblock(n * self.sectorsize + offset, buf)
+        self.flash.flash_read(n * self.sectorsize + offset, buf)
 
     def writeblocks(self, n, buf, offset=0):
         if offset == 0:
-            self.flash.erase(n * self.sectorsize)
-        self.flash.writeblock(n * self.sectorsize + offset, buf)
+            self.flash.flash_erase(n * self.sectorsize)
+        self.flash.flash_write(n * self.sectorsize + offset, buf)
 
     def ioctl(self, op, arg):
         if op == 4:  # MP_BLOCKDEV_IOCTL_BLOCK_COUNT
-            return self.flash.getsize() // self.sectorsize
+            return self.flash.flash_size() // self.sectorsize
         if op == 5:  # MP_BLOCKDEV_IOCTL_BLOCK_SIZE
             return self.sectorsize
         if op == 6:  # MP_BLOCKDEV_IOCTL_BLOCK_ERASE
-            self.flash.erase(arg * self.sectorsize)
+            self.flash.flash_erase(arg * self.sectorsize)
             return 0
