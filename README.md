@@ -37,9 +37,8 @@ size.
 ### flash.flash_write(addr, buffer)
 
 Write data from the buffer at the address. The amount of data is defined by the buffer
-size. The data is written in multiples of page sizes. If the address is not a
-multiple of the page size, the size must not cross a page boundary.
-No checks are made for these restrictions.
+size. The data is written in multiples of up to a page size, such that a single
+write does not cross a page boundary.
 
 ### flash.flash_erase(addr)
 
@@ -73,7 +72,7 @@ try:
     vfs = os.VfsLfs1(flash, progsize=256)
 except OSError as e:
     print("Mount failed with error", e)
-    print("Recreate the file system")
+    print("Recreate the file system")  # Previous content is lost!
     os.VfsLfs1.mkfs(flash, progsize=256)
     vfs = os.VfsLfs1(flash, progsize=256)
 
@@ -97,7 +96,7 @@ try:
     vfs = os.VfsLfs1(flash, progsize=256)
 except OSError as e:
     print("Mount failed with error", e)
-    print("Recreate the file system")
+    print("Recreate the file system")  # Previous content is lost!
     os.VfsLfs1.mkfs(flash, progsize=256)
     vfs = os.VfsLfs1(flash, progsize=256)
 
