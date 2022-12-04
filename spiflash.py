@@ -42,6 +42,7 @@ CMD_JEDEC_ID = const(0x9F)
 CMD_READ_STATUS = const(0x05)    # Read status register
 CMD_WRITE_ENABLE = const(0x06)   # Write enable
 CMD_READ_UID = const(0x4B)
+CMD_READ_SFDP = const(0x5A)
 PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)
 
@@ -51,15 +52,10 @@ class SPIflash:
         self._cs = cs
         self._cs(1)
         self._buf = bytearray(1)
-        self._addr4b = addr4b
         self.pagesize = pagesize
-        self.sectorsize = sectorsize
-        if addr4b:
-            self._cmds = _CMDS4BA
-            self._addrbuf = bytearray(5)
-        else:
-            self._cmds = _CMDS3BA
-            self._addrbuf = bytearray(4)
+        self._addr4b = 0
+        self._cmds = _CMDS3BA
+        self._addrbuf = bytearray(4)
 
         self.wait()
         id = self.getid()
@@ -67,6 +63,21 @@ class SPIflash:
             self._size = 512 * 1024
         else:
             self._size = 1 << id[2]
+
+        header = self.get_sfdp(0, 16)
+        len = header[11] * 4;
+        if len >= 29:
+            addr = header[12] + (header[13] << 8) + (header[14] << 16)
+            table = self.get_sfdp(addr, len)
+            self._addr4b = ((table[2] >> 1) & 0x03) != 0
+            self.sectorsize = 1 << table[28]
+        else:
+            self._addr4b = addr4b
+            self.sectorsize = sectorsize
+
+        if self._addr4b:
+            self._cmds = _CMDS4BA
+            self._addrbuf = bytearray(5)
 
     def flash_size(self):
         return self._size
@@ -92,6 +103,13 @@ class SPIflash:
         self._cs(0)
         self._write_cmd(CMD_JEDEC_ID)  # id
         res = self._spi.read(3)
+        self._cs(1)
+        return res
+
+    def get_sfdp(self, addr, len):
+        self._write_addr(CMD_READ_SFDP, addr)
+        self._spi.write(bytearray(1))
+        res = self._spi.read(len)
         self._cs(1)
         return res
 
