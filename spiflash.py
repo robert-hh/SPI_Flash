@@ -47,7 +47,7 @@ PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)
 
 class SPIflash:
-    def __init__(self, spi, cs, addr4b=False, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE):
+    def __init__(self, spi, cs, addr4b=False, size=None, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE):
         self._spi = spi
         self._cs = cs
         self._cs(1)
@@ -58,11 +58,14 @@ class SPIflash:
         self._addrbuf = bytearray(4)
 
         self.wait()
-        id = self.getid()
-        if id[2] == 1:
-            self._size = 512 * 1024
+        if size is None:
+            id = self.getid()
+            if id[2] == 1:
+                self._size = 512 * 1024
+            else:
+                self._size = 1 << id[2]
         else:
-            self._size = 1 << id[2]
+            self._size = size
 
         header = self.get_sfdp(0, 16)
         len = header[11] * 4;
