@@ -3,8 +3,14 @@
 This is a combination of a raw SPI flash driver and a 
 minimal block device driver to use a SPI connected flash
 device for a MicroPython file system. The focus of that driver is
-small size and simplicity, not speed. Nevertheless, it works reasonably
-fast.
+small size and simplicity, not speed. Nevertheless, it works 
+reasonably fast. It shall be used with a VFS file system, which
+takes care of only writing to erased areas.
+A more generic NV memory driver can be found at
+https://github.com/peterhinch/micropython_eeprom, which supports
+different types of memory, any write sizes and spanning the memory
+space over multiple chips.
+
 
 ## Constructors:
 
