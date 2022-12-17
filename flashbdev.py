@@ -22,6 +22,7 @@
 # SOFTWARE.
 #
 
+
 class FlashBdev:
     def __init__(self, flash):
         self.flash = flash

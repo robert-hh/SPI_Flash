@@ -35,19 +35,22 @@
 _READ_INDEX = const(0)
 _PROGRAM_PAGE_INDEX = const(1)
 _SECTOR_ERASE_INDEX = const(2)
-_CMDS3BA = b'\x03\x02\x20'  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
-_CMDS4BA = b'\x13\x12\x21'  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
+_CMDS3BA = b"\x03\x02\x20"  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
+_CMDS4BA = b"\x13\x12\x21"  # CMD_READ CMD_PROGRAM_PAGE CMD_ERASE_4K
 
 CMD_JEDEC_ID = const(0x9F)
-CMD_READ_STATUS = const(0x05)    # Read status register
-CMD_WRITE_ENABLE = const(0x06)   # Write enable
+CMD_READ_STATUS = const(0x05)  # Read status register
+CMD_WRITE_ENABLE = const(0x06)  # Write enable
 CMD_READ_UID = const(0x4B)
 CMD_READ_SFDP = const(0x5A)
 PAGE_SIZE = const(256)
 SECTOR_SIZE = const(4096)
 
+
 class SPIflash:
-    def __init__(self, spi, cs, addr4b=False, size=None, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE):
+    def __init__(
+        self, spi, cs, addr4b=False, size=None, pagesize=PAGE_SIZE, sectorsize=SECTOR_SIZE
+    ):
         self._spi = spi
         self._cs = cs
         self._cs(1)
@@ -68,7 +71,7 @@ class SPIflash:
             self._size = size
 
         header = self.get_sfdp(0, 16)
-        len = header[11] * 4;
+        len = header[11] * 4
         if len >= 29:
             addr = header[12] + (header[13] << 8) + (header[14] << 16)
             table = self.get_sfdp(addr, len)
@@ -141,7 +144,7 @@ class SPIflash:
             self._cs(1)
             # _write_addr() sets _cs low
             self._write_addr(self._cmds[_PROGRAM_PAGE_INDEX], addr)
-            self._spi.write(mv[pos:pos + size])
+            self._spi.write(mv[pos : pos + size])
             self._cs(1)
             self.wait()
 
@@ -156,4 +159,3 @@ class SPIflash:
         self._write_addr(self._cmds[_SECTOR_ERASE_INDEX], addr)
         self._cs(1)
         self.wait()
-
