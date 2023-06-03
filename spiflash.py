@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2015 Christopher Arndt
-# Copyright (c) 2019 Peter Hich
+# Copyright (c) 2019 Peter Hinch
 # Copyright (c) 2022 Robert Hammelrath
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,12 +23,7 @@
 #
 # flashbdev.py
 #
-# A combination of spiflash.py by Christopher Arndt, the
-# esp8266 flashbdev.py driver and the EEPROM library of Peter Hinch
-#
-# https://github.com/SpotlightKid/micropython-stm-lib/tree/master/spiflash
-# https://github.com/peterhinch/micropython_eeprom.git
-#
+
 
 # 3 and 4 byte address commands
 _READ_INDEX = const(0)
